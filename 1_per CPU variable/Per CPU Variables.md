@@ -43,3 +43,54 @@ Imagine you and your friends (each CPU) have your own notebooks (per CPU variabl
 It's all about ensuring everyone writes their notes efficiently, without any mix-ups or waiting! 🚀🔏
 
 
+**Simple Code Example** 🧑‍💻🎯
+
+Imagine we have a per-CPU variable that keeps track of how many times a function is called per CPU. Here is a simple example in the Linux kernel:
+
+```c
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/smp.h>
+
+// Define a per-CPU variable
+DEFINE_PER_CPU(unsigned long, function_call_count);
+
+void example_function(void)
+{
+    int cpu;
+    cpu = get_cpu();  // Disable preemption and get current CPU number
+    
+    per_cpu(function_call_count, cpu)++;  // Increment the function call count for the current CPU
+    
+    put_cpu();  // Enable preemption
+}
+
+// Module initialization
+static int __init my_module_init(void)
+{
+    // Call example function
+    example_function();
+
+    return 0; 
+}
+
+// Module exit
+static void __exit my_module_exit(void)
+{
+    // Maybe log or perform an action with the per-CPU variable
+}
+
+module_init(my_module_init);
+module_exit(my_module_exit);
+MODULE_LICENSE("GPL");
+```
+
+**Explanation** 🗣️📘
+
+- We utilize `DEFINE_PER_CPU(type, name);` macro to declare a per-CPU variable named `function_call_count` which keeps a count of function calls per CPU.
+- Within `example_function`, `get_cpu()` is used to disable preemption and get the current CPU number.
+- `per_cpu(function_call_count, cpu)++;` increments the call count specifically for the CPU currently handling the function.
+- `put_cpu()` re-enables preemption.
+- On module initialization (`my_module_init`), `example_function()` gets called and on module exit (`my_module_exit`) you might decide to log the count or perform some other actions using the per-CPU variable.
+
+💡 This code snippet allows each CPU to independently keep track of how many times `example_function()` has been called without needing to use locks or other synchronization mechanisms to handle access to `function_call_count` safely.
